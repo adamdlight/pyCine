@@ -1,3 +1,11 @@
+"""
+This code is released under the terms of the GNU General Public License (GPL) version 3.
+
+Author: Adam D. Light
+Contact: adamdlight [at] gmail.com
+Latest update: 04 June, 2012
+"""
+
 import struct
 import numpy
 
