@@ -93,54 +93,59 @@ class Cine(object):
 			    "File is not standard .cine format or file is corrupt."
 			self._read_cine(cinefile,**kwargs)
             
-	def _read_cine(self,cinefile,no_tagged_blocks=0,no_attributes=0,framelimits=None):
-        #first 44 bytes are file header
+	def _read_cine(self,cinefile,no_tagged_blocks=False,
+		       no_attributes=False,read_images=True,
+		       framelimits=None):
+		# first 44 bytes are file header
 		header_length = 44
-        #next 40 bytes are bitmap header
+		# next 40 bytes are bitmap header
 		bitmapinfo_length = 40
 		self.CineFileHeader = self._get_CineFileHeader(
 			cinefile.read(header_length))
 		self.BitmapInfoHeader = self._get_BitmapInfoHeader(
 			cinefile.read(bitmapinfo_length))
-        # next 6904 bytes are the setup structure
+		# next 6904 bytes are the setup structure
 		deprecated_skip = 140  
 		# next 140 bytes are deprecated info that's not correct,
-        #     except for TrigFrame, which is only for syncing display in PCC
+		#     except for TrigFrame, which is only for syncing display in PCC
 		cinefile.seek(header_length+bitmapinfo_length+deprecated_skip)  
-        # check that setup is at correct Mark location
+		# check that setup is at correct Mark location
 		setupstring = struct.unpack("<2s",cinefile.read(2))[0]
 		if not (setupstring == 'ST'):
 			print setupstring
 			print "SETUP structure marker is incorrect."
 			print "File format may have changed or file may be damaged."
-        # get the length of the entire Setup structure
+		# get the length of the entire Setup structure
 		setup_length = struct.unpack("<H",cinefile.read(2))[0]
-        # skip the parameters from Mark up to ImWidth, since they are not  
-        #     useful for normal camera data analysis (options not used)
-        # start at ImWidth parameter, 597 bytes past beginning of structure
+		# skip the parameters from Mark up to ImWidth, since they are not  
+		#     useful for normal camera data analysis (options not used)
+		# start at ImWidth parameter, 597 bytes past beginning of structure
 		setup_initial_skip = 597 
 		new_setup_start_position = header_length + bitmapinfo_length\
 		    + deprecated_skip+setup_initial_skip
 		cinefile.seek(new_setup_start_position)
-        # hard-code number of zeros in "zero area of the SETUP structure"  
+		# hard-code number of zeros in "zero area of the SETUP structure"  
 		#     since rest of format is hard-coded anyway
 		setup_zeros_length = 1212
 		setup_read_length = setup_length - setup_initial_skip \
 		    - setup_zeros_length - deprecated_skip
-        # read Setup structure
+		# read Setup structure
 		self.Setup = self._get_Setup(cinefile.read(setup_read_length))
-        # scan to end of Setup structure (zeros present after data)
+		# scan to end of Setup structure (zeros present after data)
 		cinefile.seek(header_length+bitmapinfo_length+setup_length)
-        # read any tagged blocks
+		
+		# read any tagged blocks
 		if no_tagged_blocks:
 			self.TaggedBlocks = {}
 		else:
 			tag_start = setup_length+header_length+bitmapinfo_length
 			self.TaggedBlocks = self._get_TaggedBlocks(cinefile,tag_start)     
 			
-		# Read image data
-		self.images = self._get_Images(cinefile,
-		                                self.CineFileHeader["OffImageOffsets"],framelimits)
+		if read_images:
+			# Read image data
+			self.images = self._get_Images(cinefile,
+						       self.CineFileHeader["OffImageOffsets"],
+						       framelimits)
 		
 
 		if no_attributes:
