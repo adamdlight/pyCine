@@ -3,11 +3,12 @@ This code is released under the terms of the GNU General Public License (GPL) ve
 
 Author: Adam D. Light
 Contact: adamdlight [at] gmail.com
-Latest update: 04 June, 2012
+Latest update: 08 January, 2012
 """
 
 import struct
 import numpy
+import h5py
 
 class Cine(object):
 	"""
@@ -139,7 +140,7 @@ class Cine(object):
 			self.TaggedBlocks = {}
 		else:
 			tag_start = setup_length+header_length+bitmapinfo_length
-			self.TaggedBlocks = self._get_TaggedBlocks(cinefile,tag_start)     
+			self.TaggedBlocks = self._get_TaggedBlocks(cinefile,tag_start,framelimits)     
 			
 		if read_images:
 			# Read image data
@@ -330,7 +331,7 @@ class Cine(object):
 		return setup_dict
 
 	
-	def _get_TaggedBlocks(self,cinefile,tag_start):		
+	def _get_TaggedBlocks(self,cinefile,tag_start,framelims):		
 	    # store tagged blocks as a dictionary since we don't 
 	    # know how many blocks or how big they are
 		blocks_dict = {}
@@ -401,9 +402,10 @@ class Cine(object):
 					        + numpy.float128(fraction \
 					        - self.CineFileHeader["TriggerTime"][0])/(2**32)
 				# Full representation
-				blocks_dict["TimeOnly"] = TimeOnly
+				blocks_dict["TimeOnly"] = zip(numpy.asarray(TimeOnly)[0,framelims[0]:framelims[1]],
+							      numpy.asarray(TimeOnly)[1,framelims[0]:framelims[1]])
 				# Convenience floating point representation
-				blocks_dict["time_float"] = time_float
+				blocks_dict["time_float"] = time_float[framelims[0]:framelims[1]]
 			
 			if BlockType == 1003:
 				# Exposure only block, format = fraction * 2**32)
@@ -424,9 +426,9 @@ class Cine(object):
 					exposure_float[time_step] = numpy.float(fraction) \
 					    / numpy.float(2**32)
 				# Full representation
-				blocks_dict["ExposureOnly"] = ExposureOnly
+				blocks_dict["ExposureOnly"] = ExposureOnly[framelims[0]:framelims[1]]
 				# Convenience floating point representation
-				blocks_dict["exposure_float"] = exposure_float
+				blocks_dict["exposure_float"] = exposure_float[framelims[0]:framelims[1]]
 			
 			# add size of current block to total length of tagged portion
 			tagged_length += BlockSize
