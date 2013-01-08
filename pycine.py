@@ -149,6 +149,9 @@ class Cine(object):
 						       framelimits)
 		
 
+		# Define attribute containing frame limits no matter what
+		self.framelimits=framelimits
+
 		if no_attributes:
 			return
 		else:
