@@ -52,11 +52,15 @@ class Cine(object):
 	        this attribute is of type None.  If desired, this 
 	        attribute may be suppressed and the corresponding
 	        section of the file may be skipped by setting the flag
-	        'no_tagged_blocks = 1' on initialization.
+	        'no_tagged_blocks=True' on initialization.
 
 	cine_instance.images:
 	        Numpy ndarray((nx,ny,nframes),float) containing the 
-	        image pixel data.   
+	        image pixel data.  		
+		If desired, this attribute may be suppressed and 
+		the corresponding section of the file may be skipped 
+		by setting the flag 'read_images=False' on 
+		initialization.
 	
 
 	An instance of the class also creates a named attribute
@@ -489,3 +493,57 @@ class Cine(object):
 
 		print "Read " + str(nframes) + " frames."
 		return image_array
+
+	def save_hdf5(self,filepath="cine_file.h5"):
+		"""
+		Method for saving Cine object data to hdf5.
+
+		cine_instance.save_hdf5(filepath="cine_file.h5")
+
+		The parts of the file that are saved depend on 
+		how the object was initialized.  If 'no_attributes=True' or 
+		'read_images=False', the corresponding data will not be
+		present in the object or saved in the file.
+
+		The default structure of the h5 file is as follows:
+
+		The root group contains the 'images' array and a link to 
+		the 'time_float' array, if it exists.  The actual 'time_float' 
+		data is contained with the other TaggedBlocks data in the group
+		'TaggedBlocks'.  All other metadata is saved in the 'attrs' dictionary.
+
+		For example:
+		In [136]: f.items()
+		Out[136]: 
+		[(u'TaggedBlocks', <HDF5 group "/TaggedBlocks" (4 members)>),
+		(u'images', <HDF5 dataset "images": shape (128, 128, 900), type "<f8">),
+		(u'time_float', <HDF5 dataset "time_float": shape (900,), type "<f8">)]
+		"""
+
+		# Try to create file, fail if file exists
+		try:                                                                        
+			f = h5py.File(filepath,'w-')                                            
+		except IOError:                                                            
+			print "File already exists or unable to create file."               
+			return 
+		# Read metadata into h5 file attributes
+		f.attrs["framelimits"] = self.framelimits
+		for key,value in self.BitmapInfoHeader.items():
+			f.attrs[key] = value
+		for key,value in self.CineFileHeader.items():
+			f.attrs[key] = value
+		for key,value in self.Setup.items():
+			f.attrs[key] = value
+		# If tagged blocks exists, make a group for them
+		# and fill it with the datasets from TaggedBlocks
+		if hasattr(self,"TaggedBlocks"):
+			TBgrp = f.create_group("TaggedBlocks")
+			for key,value in self.TaggedBlocks.items():
+				TBgrp.create_dataset(key,data=value)
+			# If time_float data exists, link to it from the root group
+			if "time_float" in TBgrp.keys():
+				f["time_float"] = h5py.SoftLink("/TaggedBlocks/time_float")
+		# Write image array into root group
+		if hasattr(self,"images"):
+			f.create_dataset("images",data=self.images)
+		f.close()
