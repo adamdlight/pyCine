@@ -130,14 +130,14 @@ class Cine(object):
 		#     useful for normal camera data analysis (options not used)
 		# start at ImWidth parameter, 597 bytes past beginning of structure
 		setup_initial_skip = 597 
-		new_setup_start_position = header_length + bitmapinfo_length\
-		    + deprecated_skip+setup_initial_skip
+		new_setup_start_position = (header_length + bitmapinfo_length
+					    + deprecated_skip+setup_initial_skip)
 		cinefile.seek(new_setup_start_position)
 		# hard-code number of zeros in "zero area of the SETUP structure"  
 		#     since rest of format is hard-coded anyway
 		setup_zeros_length = 1212
-		setup_read_length = setup_length - setup_initial_skip \
-		    - setup_zeros_length - deprecated_skip
+		setup_read_length = (setup_length - setup_initial_skip 
+				     - setup_zeros_length - deprecated_skip)
 		# read Setup structure
 		self.Setup = self._get_Setup(cinefile.read(setup_read_length))
 		# scan to end of Setup structure (zeros present after data)
@@ -148,7 +148,9 @@ class Cine(object):
 			self.TaggedBlocks = {}
 		else:
 			tag_start = setup_length+header_length+bitmapinfo_length
-			self.TaggedBlocks = self._get_TaggedBlocks(cinefile,tag_start,framelimits)     
+			self.TaggedBlocks = self._get_TaggedBlocks(cinefile,
+								   tag_start,
+								   framelimits)     
 			
 		if read_images:
 			# Read image data
@@ -295,9 +297,9 @@ class Cine(object):
 		# the next chunk is skipped stuff
 		format_Conv8min_MCPercent_inclusive = "2I 30l 3I 4? 2I 16l 32I l 64f" 
 		format_CICalib_Description_end_inclusive = "7I 8I 4I 4I 4096s"
-		format_string = "<" + format_ImWidth_RealBPP_inclusive \
-		    + format_Conv8min_MCPercent_inclusive \
-		    + format_CICalib_Description_end_inclusive
+		format_string = ("<" + format_ImWidth_RealBPP_inclusive 
+				 + format_Conv8min_MCPercent_inclusive 
+				 + format_CICalib_Description_end_inclusive)
 		filetuple = struct.unpack(format_string,filestring)
 		setup_dict = {}
 		# setup_dict["filetuple"]=filetuple  #Could include entire tuple
@@ -351,22 +353,22 @@ class Cine(object):
 		# Old block types (1000,1001) are omitted
 		# NOTE: RangeData is included here, but it's not yet defined as of 
 		#     cine640.pdf
-		tag_type_dict = {1002:'TimeOnly',1003:'ExposureOnly',1004:'RangeData',\
-			                 1005:'BinSig',1006:'AnaSig'}
+		tag_type_dict = {1002:'TimeOnly',1003:'ExposureOnly',1004:'RangeData',
+				 1005:'BinSig',1006:'AnaSig'}
 		
 		# Construct dictionary of block types with how many bytes each 
 		#     data value takes
 		# USAGE NOT YET IMPLEMENTED
-		tag_data_size_dict = {1002:'8',1003:'4',1004:'1',\
-			                      1005:'1',1006:'2'}
+		tag_data_size_dict = {1002:'8',1003:'4',1004:'1',
+				      1005:'1',1006:'2'}
 		tagged_length = 0
 		# Keep list of tag header information for each block
 		tag_headers = []  # for debugging
 		# Move to beginning of tagged block section
 		cinefile.seek(tag_start)
 	    # Read in any tagged blocks until reaching the image data
-		while tagged_length + tag_start <= \
-			    self.CineFileHeader["OffImageOffsets"]-1:  
+		while (tagged_length + tag_start <= 
+		       self.CineFileHeader["OffImageOffsets"]-1):  
 			# header is always 8 bytes     
 			tag_header = struct.unpack("< I H H",cinefile.read(8))  
 			tag_headers.append(tag_header)
@@ -376,10 +378,10 @@ class Cine(object):
 			# "Reserved" is second WORD; is 0 in last block, 1 otherwise
 			blocks_left = tag_header[2] 
 
-		    # make sure BlockType exists
-			assert BlockType in tag_type_dict, "Unknown tagged block type: "\
-			    + str(BlockType)
-		    # read in data
+			# make sure BlockType exists
+			assert BlockType in tag_type_dict, ("Unknown tagged block type: "
+							    + str(BlockType))
+			# read in data
 			
 			# WANT TO GENERALIZE SO THAT ALL THAT NEEDS TO BE SPECIFIED 
 			# ARE THE APPROPRIATE VALUES IN THE BLOCK DICTIONARIES
@@ -434,8 +436,8 @@ class Cine(object):
 					ExposureOnly[time_step] = fraction
 					# Populate float array
 					# Use 128-byte float to preserve precision during calc. 
-					exposure_float[time_step] = numpy.float(fraction) \
-					    / numpy.float(2**32)
+					exposure_float[time_step] = (numpy.float(fraction)/ 
+								     numpy.float(2**32))
 				# Full representation
 				blocks_dict["ExposureOnly"] = ExposureOnly[framelims[0]:framelims[1]]
 				# Convenience floating point representation
