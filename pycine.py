@@ -103,10 +103,13 @@ class Cine(object):
 		       framelimits=None):
 		# first 44 bytes are file header
 		header_length = 44
-		# next 40 bytes are bitmap header
-		bitmapinfo_length = 40
 		self.CineFileHeader = self._get_CineFileHeader(
 			cinefile.read(header_length))
+		# if framelimits undefined, set to entire sequence
+		if framelimits is None:
+			framelimits = [0,self.CineFileHeader['ImageCount']]
+		# next 40 bytes are bitmap header
+		bitmapinfo_length = 40
 		self.BitmapInfoHeader = self._get_BitmapInfoHeader(
 			cinefile.read(bitmapinfo_length))
 		# next 6904 bytes are the setup structure
@@ -388,8 +391,8 @@ class Cine(object):
 				bytes_per_value = 8  #(32.32 bits)
 				ntimes = data_length/bytes_per_value
 				# full precision tuple of arrays
-				TimeOnly = (numpy.ndarray(ntimes,int),\
-					            numpy.ndarray(ntimes,int))  
+				TimeOnly = (numpy.ndarray(ntimes,int),
+					    numpy.ndarray(ntimes,int))  
 				# lower precision floating point representation
 				time_float = numpy.ndarray((ntimes),numpy.float) 
 				
