@@ -6,6 +6,7 @@ Contact: adamdlight [at] gmail.com
 Latest update: 08 January, 2012
 """
 
+import sys
 import struct
 import numpy
 import h5py
@@ -550,3 +551,30 @@ class Cine(object):
 		if hasattr(self,"images"):
 			f.create_dataset("images",data=self.images)
 		f.close()
+
+def main(filename):
+	"""
+	When module is run, convert cine file
+	to hdf5.
+	"""
+	if filename.endswith('.cine'):
+		# Read into Cine object
+		mov = Cine(filename)
+		# Write into file with same name in same directory,
+		# replacing '.cine' extension with '.h5'
+		save_name = filename.rsplit('.',1)[0]+'.h5'
+		mov.save_hdf5(filepath=save_name)
+		return 1
+	else:
+		print "File extension '%s' not recognized."%filename.rsplit('.',1)[1]
+		print "Current version only converts raw '.cine' files."
+		return 0
+
+
+if __name__ == "__main__":
+	try:
+		filename = sys.argv[1]
+		main(filename)
+	except KeyboardInterrupt:
+		print >> sys.stderr, '\nExiting by user request.\n'
+		sys.exit(0)
