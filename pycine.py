@@ -3,10 +3,11 @@ This code is released under the terms of the GNU General Public License (GPL) ve
 
 Author: Adam D. Light
 Contact: adamdlight [at] gmail.com
-Latest update: 08 January, 2012
+Latest update: 05 February, 2012
 """
 
 import sys
+import traceback
 import struct
 import numpy
 import tables
@@ -560,8 +561,9 @@ class Cine(object):
 			f.close()
 			print "Cine file saved succesfully in HDF5 format."
 		except:
-			print "Saving to h5 file has failed."
 			f.close()
+			print traceback.format_exc()
+			print "Saving to h5 file has failed."
 
 def main(filename):
 	"""
