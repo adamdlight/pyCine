@@ -9,7 +9,7 @@ Latest update: 08 January, 2012
 import sys
 import struct
 import numpy
-import h5py
+import tables
 
 class Cine(object):
 	"""
@@ -500,6 +500,7 @@ class Cine(object):
 		print "Read " + str(nframes) + " frames."
 		return image_array
 
+
 	def save_hdf5(self,filepath="cine_file.h5"):
 		"""
 		Method for saving Cine object data to hdf5.
@@ -527,32 +528,40 @@ class Cine(object):
 		"""
 
 		# Try to create file, fail if file exists
-		try:                                                                        
-			f = h5py.File(filepath,'w-')                                            
-		except IOError:                                                            
-			print "File already exists or unable to create file."               
+		try:   
+			f = tables.openFile(filepath,'w')    
+		except IOError: 
+			print "File already exists or unable to create file."  
 			return 
-		# Read metadata into h5 file attributes
-		f.attrs["framelimits"] = self.framelimits
-		for key,value in self.BitmapInfoHeader.items():
-			f.attrs[key] = value
-		for key,value in self.CineFileHeader.items():
-			f.attrs[key] = value
-		for key,value in self.Setup.items():
-			f.attrs[key] = value
-		# If tagged blocks exists, make a group for them
-		# and fill it with the datasets from TaggedBlocks
-		if hasattr(self,"TaggedBlocks"):
-			TBgrp = f.create_group("TaggedBlocks")
-			for key,value in self.TaggedBlocks.items():
-				TBgrp.create_dataset(key,data=value)
-			# If time_float data exists, link to it from the root group
-			if "time_float" in TBgrp.keys():
-				f["time_float"] = h5py.SoftLink("/TaggedBlocks/time_float")
-		# Write image array into root group
-		if hasattr(self,"images"):
-			f.create_dataset("images",data=self.images)
-		f.close()
+		try:
+			# try writing data, close file on fail
+			# Write metadata variables
+			attrGrp = f.createGroup("/","Meta",
+						title="Meta-data, including CineFileHeader, BitmapInfoHeader, and Setup variables.")
+			f.createArray(attrGrp,"framelimits",self.framelimits)
+			for key,value in self.BitmapInfoHeader.items():
+				f.createArray(attrGrp,key,value)
+			for key,value in self.CineFileHeader.items():
+				f.createArray(attrGrp,key,value)
+			for key,value in self.Setup.items():
+				f.createArray(attrGrp,key,value)
+			# If tagged blocks exists, make a group for them
+			# and fill it with the datasets from TaggedBlocks
+			if hasattr(self,"TaggedBlocks"):
+				TBgrp = f.createGroup("/","TaggedBlocks",title="Subgroup of all tagged blocks")
+				for key,value in self.TaggedBlocks.items():
+					f.createArray(TBgrp,key,value)
+				# If time_float data exists, link to it from the root group
+				if "time_float" in self.TaggedBlocks.keys():
+					f.createSoftLink('/',"time_float","/TaggedBlocks/time_float")
+			# Write image array into root group
+			if hasattr(self,"images"):
+				f.createArray(f.root,"images",self.images)
+			f.close()
+			print "Cine file saved succesfully in HDF5 format."
+		except:
+			print "Saving to h5 file has failed."
+			f.close()
 
 def main(filename):
 	"""
