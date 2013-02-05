@@ -554,7 +554,7 @@ class Cine(object):
 					f.createArray(TBgrp,key,value)
 				# If time_float data exists, link to it from the root group
 				if "time_float" in self.TaggedBlocks.keys():
-					f.createSoftLink('/',"time_float","/TaggedBlocks/time_float")
+					f.createHardLink('/',"time_float","/TaggedBlocks/time_float")
 			# Write image array into root group
 			if hasattr(self,"images"):
 				f.createArray(f.root,"images",self.images)
