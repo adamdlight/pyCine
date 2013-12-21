@@ -475,7 +475,7 @@ class Cine(object):
 		
 		# Redefine nframes to actual number of frames to record
 		nframes = framelims[1] - framelims[0]
-		image_array = numpy.ndarray((nx,ny,nframes),float)
+		image_array = numpy.ndarray((ny,nx,nframes),float)
 		# Go to first desired frame
 		cinefile.seek(pointer_array[framelims[0]])
 
@@ -496,7 +496,7 @@ class Cine(object):
 			else:
 				image_bits = struct.unpack("<"+str(ImageSize/2)+"H",
 				                                  cinefile.read(ImageSize))
-			image_array[...,frame] = numpy.reshape(image_bits,(nx,ny))
+			image_array[...,frame] = numpy.reshape(image_bits,(ny,nx))
 
 		print "Read " + str(nframes) + " frames."
 		return image_array
